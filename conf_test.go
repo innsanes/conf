@@ -210,3 +210,23 @@ func TestFunc(t *testing.T) {
 	x.PrintResult()
 	assert.Equal(t, "func-name", s.Name)
 }
+
+type TestSingletonStruct struct {
+	String  string `conf:"string"`
+	String2 string `conf:"string2"`
+}
+
+// 测试单例模式是否正常
+func TestSingleton(t *testing.T) {
+	os.Args = []string{"", "-t_string=CCC"}
+	s := &TestSingletonStruct{}
+	conf.RegisterConfWithName("t", s)
+	flag := conf.NewFlag(conf.GetConf())
+	conf.RegisterSource(flag)
+	conf.Parse()
+	err := conf.Set("t_string2", "vm50")
+	assert.Nil(t, err)
+	conf.PrintResult()
+	assert.Equal(t, "CCC", s.String)
+	assert.Equal(t, "vm50", s.String2)
+}

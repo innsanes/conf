@@ -3,6 +3,10 @@ package conf
 // 单例模式
 var nx = New()
 
+func GetConf() *X {
+	return nx
+}
+
 func RegisterConf(f interface{}) {
 	nx.RegisterConf(f)
 }
