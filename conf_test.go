@@ -1,9 +1,9 @@
 package conf_test
 
 import (
+	"conf"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
-	"innwiki/library/conf"
 	"os"
 	"testing"
 )
