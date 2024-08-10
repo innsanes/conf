@@ -1,4 +1,4 @@
-module conf
+module github.com/innsanes/conf
 
 go 1.19
 
