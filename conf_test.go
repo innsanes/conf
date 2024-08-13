@@ -1,7 +1,7 @@
 package conf_test
 
 import (
-	"conf"
+	"github.com/innsanes/conf"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 	"os"
