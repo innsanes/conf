@@ -33,7 +33,7 @@ func (y *Yaml) Parse() {
 	var data map[string]interface{}
 	err := yaml.Unmarshal(binaryData, &data)
 	if err != nil {
-		y.conf.log.Fatalf("yaml unmarshal err:%s", err)
+		y.conf.panic("yaml unmarshal err:%s", err)
 	}
 	y.yamlRecursiveParse(data, "")
 }
@@ -57,7 +57,7 @@ func (y *Yaml) format() {
 	// 2. 将map数据转成yaml
 	binaryData, err := yaml.Marshal(data)
 	if err != nil {
-		y.conf.log.Fatalf("yaml marshal err:%s", err)
+		y.conf.panic("yaml marshal err:%s", err)
 	}
 	// 3. 将yaml写入文件
 	y.conf.writeFile(y.YamlConf.FilePath, binaryData)

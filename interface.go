@@ -17,8 +17,10 @@ type Arg interface {
 	Set()
 }
 
-type Logger interface {
-	Fatalf(format string, v ...interface{})
-	Infof(format string, v ...interface{})
-	Errorf(format string, v ...interface{})
+type ParseLogger interface {
+	Fatal(format string, v ...interface{})
+}
+
+type ResultLogger interface {
+	Info(format string, v ...interface{})
 }

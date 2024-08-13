@@ -2,17 +2,16 @@ package conf
 
 import "fmt"
 
-type log struct {
+type resultLog struct {
 }
 
-func (l *log) Fatalf(format string, v ...interface{}) {
-	panic(fmt.Sprintf(format, v...))
-}
-
-func (l *log) Errorf(format string, v ...interface{}) {
-	fmt.Println(fmt.Sprintf("ERR: "+format, v...))
-}
-
-func (l *log) Infof(format string, v ...interface{}) {
+func (l *resultLog) Info(format string, v ...interface{}) {
 	fmt.Println(fmt.Sprintf(format, v...))
+}
+
+type parseLog struct {
+}
+
+func (l *parseLog) Fatal(format string, v ...interface{}) {
+	panic(fmt.Sprintf(format, v...))
 }

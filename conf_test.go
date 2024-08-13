@@ -84,7 +84,7 @@ type TestYamlStructNest struct {
 // yaml 文件生成, 包括默认值
 func TestYamlGen(t *testing.T) {
 	var filepath = "test/test_gen.yaml"
-	os.Args = []string{"", "-t_name=new", "-t_value=19223", "-yaml_filepath=" + filepath}
+	os.Args = []string{"", "-t_struct_name=new", "-t_struct_value=19223", "-yaml_filepath=" + filepath}
 	var x = conf.New()
 	flag := conf.NewFlag(x)
 	y := conf.NewYaml(x)

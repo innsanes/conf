@@ -6,11 +6,12 @@ import (
 )
 
 type X struct {
-	structs []*service
-	sources []Source
-	argTree *argTree
-	log     Logger
-	kv      *kv[Arg]
+	structs   []*service
+	sources   []Source
+	argTree   *argTree
+	resultLog ResultLogger
+	parseLog  ParseLogger
+	kv        *kv[Arg]
 }
 
 type argTree struct {
@@ -33,9 +34,10 @@ func (a *argTree) AppendChild(child *argTree) {
 
 func New(bfs ...BuildFunc) *X {
 	ret := &X{
-		kv:      newKV[Arg](),
-		argTree: &argTree{},
-		log:     &log{},
+		kv:        newKV[Arg](),
+		argTree:   &argTree{},
+		resultLog: &resultLog{},
+		parseLog:  &parseLog{},
 	}
 	for _, bf := range bfs {
 		bf(ret)
@@ -45,15 +47,21 @@ func New(bfs ...BuildFunc) *X {
 
 type BuildFunc func(x *X)
 
-func WithLogger(l Logger) BuildFunc {
+func WithResultLogger(l ResultLogger) BuildFunc {
 	return func(x *X) {
-		x.log = l
+		x.resultLog = l
+	}
+}
+
+func WithParseLogger(l ParseLogger) BuildFunc {
+	return func(x *X) {
+		x.parseLog = l
 	}
 }
 
 func (x *X) RegisterConf(f interface{}) {
 	if reflect.TypeOf(f).Kind() != reflect.Ptr {
-		x.log.Fatalf("register conf %v is not ptr", f)
+		x.parseLog.Fatal("register conf %v is not ptr", f)
 	}
 	x.structs = append(x.structs, &service{
 		Conf: f,
@@ -62,7 +70,7 @@ func (x *X) RegisterConf(f interface{}) {
 
 func (x *X) RegisterConfWithName(name string, f interface{}) {
 	if reflect.TypeOf(f).Kind() != reflect.Ptr {
-		x.log.Fatalf("register conf %v is not ptr", f)
+		x.parseLog.Fatal("register conf %v is not ptr", f)
 	}
 	x.structs = append(x.structs, &service{
 		Conf: f,
@@ -96,7 +104,7 @@ func (x *X) Parse() {
 			// 将配置源中的配置参数设置到对应的参数列表中
 			err := arg.SetValue(value)
 			if err != nil {
-				x.log.Fatalf("arg %s SetValue %v err:%s", key, value, err)
+				x.parseLog.Fatal("arg %s SetValue %v err:%s", key, value, err)
 			}
 			// 如果没有报错，那么就设置参数已经被设置过的标志
 			arg.Set()
@@ -134,7 +142,7 @@ func (x *X) parseStruct(service *service) {
 		x.argTree.AppendChild(tree)
 		return
 	} else {
-		x.log.Fatalf("conf %v is not ptr", conf)
+		x.parseLog.Fatal("conf %v is not ptr", conf)
 	}
 }
 
@@ -196,19 +204,19 @@ func (x *X) parseTag(tree *argTree, conf reflect.Value, tags ...string) {
 		switch field.Type.Kind() {
 		// Struct 已经在上面处理过 所以这里遇到就是错误的情况
 		case reflect.Struct:
-			x.log.Fatalf("field %s (%s) should not be struct", field.Name, key)
+			x.parseLog.Fatal("field %s (%s) should not be struct", field.Name, key)
 		case reflect.Ptr:
-			x.log.Fatalf("field %s (%s) should not be ptr", field.Name, key)
+			x.parseLog.Fatal("field %s (%s) should not be ptr", field.Name, key)
 		// TODO: 额外处理
 		case reflect.Slice:
-			x.log.Fatalf("field %s (%s) should not be slice", field.Name, key)
+			x.parseLog.Fatal("field %s (%s) should not be slice", field.Name, key)
 		// TODO: 额外处理
 		case reflect.Map:
-			x.log.Fatalf("field %s (%s) should not be map", field.Name, key)
+			x.parseLog.Fatal("field %s (%s) should not be map", field.Name, key)
 		case reflect.Interface:
-			x.log.Fatalf("field %s (%s) should not be interface", field.Name, key)
+			x.parseLog.Fatal("field %s (%s) should not be interface", field.Name, key)
 		case reflect.Complex64, reflect.Complex128:
-			x.log.Fatalf("field %s (%s) should not be complex", field.Name, key)
+			x.parseLog.Fatal("field %s (%s) should not be complex", field.Name, key)
 		case reflect.String:
 			arg = NewString(&value)
 		case reflect.Int, reflect.Int32, reflect.Int64, reflect.Int16, reflect.Int8:
@@ -220,14 +228,14 @@ func (x *X) parseTag(tree *argTree, conf reflect.Value, tags ...string) {
 		case reflect.Bool:
 			arg = NewBool(&value)
 		default:
-			x.log.Fatalf("field %s (%s) unknown type", field.Name, key)
+			x.parseLog.Fatal("field %s (%s) unknown type", field.Name, key)
 		}
 		// 设置Arg默认值
 		arg.SetDefaultValue(attr.Default)
 		if attr.Default != "" {
 			err := arg.SetValue(attr.Default)
 			if err != nil {
-				x.log.Fatalf("arg %s SetDefaultValue %v err:%s", key, attr.Default, err)
+				x.parseLog.Fatal("arg %s SetDefaultValue %v err:%s", key, attr.Default, err)
 			}
 		}
 		// 设置Arg描述
@@ -267,7 +275,7 @@ func (x *X) printArgTree(tree *argTree, prefix []string) {
 	if len(tree.child) == 0 {
 		key := strings.Join(append(prefix, tree.key), "_")
 		arg, _ := x.kv.Get(key)
-		x.log.Infof("-%s:%v, default:%s, usage:%s", key, arg.GetValue(), arg.GetDefaultValue(), arg.GetDescription())
+		x.resultLog.Info("-%s:%v, default:%s, usage:%s", key, arg.GetValue(), arg.GetDefaultValue(), arg.GetDescription())
 		return
 	}
 	// 非叶子节点 递归打印

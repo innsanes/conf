@@ -29,7 +29,7 @@ func (f *Flag) Parse() {
 		if err == nil {
 			break
 		}
-		f.conf.log.Errorf("parse flag err:%s", err)
+		f.conf.panic("parse flag err:%s", err)
 	}
 }
 
